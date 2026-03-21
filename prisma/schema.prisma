@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  name          String
+  email         String         @unique
+  password      String
+  appointments  Appointment[]
+  prescriptions Prescription[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Appointment {
+  id        Int      @id @default(autoincrement())
+  patient   User     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId Int
+  provider  String
+  datetime  DateTime
+  repeat    String   @default("none") // none, weekly, monthly
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Prescription {
+  id             Int        @id @default(autoincrement())
+  patient        User       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId      Int
+  medication     Medication @relation(fields: [medicationId], references: [id], onDelete: Restrict)
+  medicationId   Int
+  dosage         Dosage     @relation(fields: [dosageId], references: [id], onDelete: Restrict)
+  dosageId       Int
+  quantity       Int        // Application logic enforces > 0
+  refill_on      DateTime
+  refill_schedule String     @default("monthly")
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model Medication {
+  id            Int            @id @default(autoincrement())
+  name          String         @unique
+  prescriptions Prescription[]
+}
+
+model Dosage {
+  id            Int            @id @default(autoincrement())
+  amount        String         @unique
+  prescriptions Prescription[]
+}
