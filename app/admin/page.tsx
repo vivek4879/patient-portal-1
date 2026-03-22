@@ -6,6 +6,8 @@ import { DeleteButton } from '@/components/ui/DeleteButton'
 import { PatientSearch } from '@/components/ui/PatientSearch'
 import { Pagination } from '@/components/ui/Pagination'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminDashboard({ searchParams }: { searchParams: Promise<{ q?: string, page?: string }> }) {
   const resolvedParams = await searchParams
   const query = resolvedParams.q || ''
