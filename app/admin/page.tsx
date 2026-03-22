@@ -1,14 +1,17 @@
 import { PatientService } from '@/lib/services/patient.service'
 import Link from 'next/link'
-import { Search, UserRound, Calendar, Pill, ChevronRight } from 'lucide-react'
+import { Search, UserRound, Calendar, Pill, ChevronRight, Trash2 } from 'lucide-react'
 import { revalidatePath } from 'next/cache'
 import { DeleteButton } from '@/components/ui/DeleteButton'
 import { PatientSearch } from '@/components/ui/PatientSearch'
+import { Pagination } from '@/components/ui/Pagination'
 
-export default async function AdminDashboard({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+export default async function AdminDashboard({ searchParams }: { searchParams: Promise<{ q?: string, page?: string }> }) {
   const resolvedParams = await searchParams
   const query = resolvedParams.q || ''
-  const patients = await PatientService.getAllPatients(query)
+  const page = parseInt(resolvedParams.page || '1') || 1
+  
+  const { data: patients, meta } = await PatientService.getAllPatients(query, page, 25)
 
   async function deletePatientAct(formData: FormData) {
     'use server'
@@ -45,7 +48,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 dark:text-[#8392a6]">Total Enrolled Patients</p>
-              <h3 className="text-2xl font-bold font-manrope">{patients.length}</h3>
+              <h3 className="text-2xl font-bold font-manrope">{meta.total}</h3>
             </div>
           </div>
           <div className="p-6 rounded-2xl bg-white dark:bg-[#171f33] shadow-sm dark:shadow-[0_20px_40px_rgba(6,14,32,0.4)] border border-slate-100 dark:border-white/5 flex items-center gap-5 hover:dark:bg-[#222a3d] transition-colors duration-300">
@@ -70,55 +73,67 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
 
         <h2 className="text-xl font-bold mb-4 font-manrope tracking-tight">Active Patient Directory</h2>
         
-        <div className="bg-white dark:bg-[#171f33] rounded-2xl shadow-sm dark:shadow-[0_20px_40px_rgba(6,14,32,0.4)] border border-slate-100 dark:border-white/5 overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-[#222a3d] text-sm text-slate-500 dark:text-[#8392a6]">
-                <th className="px-6 py-4 font-semibold border-b border-slate-100 dark:border-white/5">Patient Name</th>
-                <th className="px-6 py-4 font-semibold border-b border-slate-100 dark:border-white/5">Contact Info</th>
-                <th className="px-6 py-4 font-semibold border-b border-slate-100 dark:border-white/5">Status</th>
-                <th className="px-6 py-4 font-semibold text-right border-b border-slate-100 dark:border-white/5">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-              {patients.map(patient => (
-                <tr key={patient.id} className="hover:bg-slate-50 dark:hover:bg-[#222a3d] transition-colors duration-150 group">
-                  <td className="px-6 py-5">
-                    <div className="font-semibold text-slate-900 dark:text-white text-base">{patient.name}</div>
-                    <div className="text-sm text-slate-500 dark:text-[#8392a6] mt-1 font-mono">ID: OP-{patient.id.toString().padStart(4, '0')}</div>
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="text-slate-600 dark:text-[#b9c8de]">{patient.email}</div>
-                  </td>
-                  <td className="px-6 py-5">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-[#003731] dark:text-[#3cddc7]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-[#3cddc7]"></span>
-                      Active
-                    </span>
-                  </td>
-                  <td className="px-6 py-5 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Link 
-                        href={`/admin/patient/${patient.id}`}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-br from-teal-400 to-teal-600 dark:from-[#3cddc7] dark:to-[#00a392] dark:text-[#003731] rounded-xl hover:opacity-90 transition-opacity drop-shadow-sm"
-                      >
-                        View Record
-                        <ChevronRight className="w-4 h-4" />
-                      </Link>
-                      <form action={deletePatientAct}>
-                        <input type="hidden" name="id" value={patient.id.toString()} />
-                        <DeleteButton 
-                          message="Are you sure you want to permanently delete this patient? All their appointments and prescriptions will be lost."
-                          className="p-2.5 text-slate-400 hover:text-red-500 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors" 
-                          title="Delete Patient" 
-                        />
-                      </form>
-                    </div>
-                  </td>
+        <div className="bg-white dark:bg-[#171f33] rounded-2xl shadow-sm dark:shadow-[0_20px_40px_rgba(6,14,32,0.4)] border border-slate-100 dark:border-white/5 overflow-hidden flex flex-col">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-[#222a3d] text-sm text-slate-500 dark:text-[#8392a6]">
+                  <th className="px-6 py-4 font-semibold border-b border-slate-100 dark:border-white/5">Patient Name</th>
+                  <th className="px-6 py-4 font-semibold border-b border-slate-100 dark:border-white/5">Contact Info</th>
+                  <th className="px-6 py-4 font-semibold border-b border-slate-100 dark:border-white/5">Status</th>
+                  <th className="px-6 py-4 font-semibold text-right border-b border-slate-100 dark:border-white/5">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                {patients.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-slate-500 dark:text-[#8392a6]">
+                      No patients found matching your search criteria.
+                    </td>
+                  </tr>
+                ) : (
+                  patients.map(patient => (
+                    <tr key={patient.id} className="hover:bg-slate-50 dark:hover:bg-[#222a3d] transition-colors duration-150 group">
+                      <td className="px-6 py-5">
+                        <div className="font-semibold text-slate-900 dark:text-white text-base">{patient.name}</div>
+                        <div className="text-sm text-slate-500 dark:text-[#8392a6] mt-1 font-mono">ID: OP-{patient.id.toString().padStart(4, '0')}</div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="text-slate-600 dark:text-[#b9c8de]">{patient.email}</div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-[#003731] dark:text-[#3cddc7]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-[#3cddc7]"></span>
+                          Active
+                        </span>
+                      </td>
+                      <td className="px-6 py-5 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link 
+                            href={`/admin/patient/${patient.id}`}
+                            className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-br from-teal-400 to-teal-600 dark:from-[#3cddc7] dark:to-[#00a392] dark:text-[#003731] rounded-xl hover:opacity-90 transition-opacity drop-shadow-sm"
+                          >
+                            View Record
+                            <ChevronRight className="w-4 h-4" />
+                          </Link>
+                          <form action={deletePatientAct}>
+                            <input type="hidden" name="id" value={patient.id.toString()} />
+                            <DeleteButton 
+                              message="Are you sure you want to permanently delete this patient? All their appointments and prescriptions will be lost."
+                              className="p-2.5 text-slate-400 hover:text-red-500 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors" 
+                              title="Delete Patient" 
+                            />
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          <Pagination currentPage={meta.page} totalPages={meta.totalPages} />
         </div>
       </main>
     </div>

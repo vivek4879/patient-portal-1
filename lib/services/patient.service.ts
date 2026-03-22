@@ -4,16 +4,33 @@ import { FullPatient, User } from '../types'
 const prisma = new PrismaClient()
 
 export class PatientService {
-  static async getAllPatients(query?: string): Promise<User[]> {
-    return prisma.user.findMany({
-      where: query ? {
-        OR: [
-          { name: { contains: query, mode: 'insensitive' } },
-          { email: { contains: query, mode: 'insensitive' } }
-        ]
-      } : undefined,
-      orderBy: { name: 'asc' }
-    })
+  static async getAllPatients(query?: string, page: number = 1, limit: number = 25) {
+    const skip = (page - 1) * limit
+    const where = query ? {
+      OR: [
+        { name: { contains: query, mode: 'insensitive' as const } },
+        { email: { contains: query, mode: 'insensitive' as const } }
+      ]
+    } : undefined
+
+    const [data, total] = await prisma.$transaction([
+      prisma.user.findMany({
+        where,
+        orderBy: { name: 'asc' },
+        skip,
+        take: limit
+      }),
+      prisma.user.count({ where })
+    ])
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
   }
 
   static async getPatientById(id: number): Promise<FullPatient | null> {

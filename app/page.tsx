@@ -1,24 +1,11 @@
-import { createSession } from '@/lib/utils/session'
-import { PatientService } from '@/lib/services/patient.service'
-import { redirect } from 'next/navigation'
-import { KeyRound } from 'lucide-react'
-import * as bcrypt from 'bcrypt'
+"use client"
+
+import { useActionState } from 'react'
+import { KeyRound, AlertTriangle, Loader2 } from 'lucide-react'
+import { loginAction } from '@/lib/actions/auth.actions'
 
 export default function LoginPage() {
-  async function login(formData: FormData) {
-    'use server'
-    const email = formData.get('email') as string
-    const password = formData.get('password') as string
-
-    const user = await PatientService.getPatientByEmail(email)
-    
-    if (user && await bcrypt.compare(password, user.password)) {
-      await createSession(user.id)
-      redirect('/portal')
-    } else {
-      redirect('/?error=invalid')
-    }
-  }
+  const [state, action, isPending] = useActionState(loginAction, {})
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0b1326] flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
@@ -33,7 +20,15 @@ export default function LoginPage() {
           <p className="text-slate-500 dark:text-[#8392a6] mt-3 font-medium text-sm px-4 transition-colors duration-300">Log in to safely view your health records and manage upcoming appointments.</p>
         </div>
 
-        <form action={login} className="bg-white/90 dark:bg-[#131b2e]/90 backdrop-blur-2xl rounded-[2rem] p-8 shadow-xl dark:shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-slate-100 dark:border-white/5 space-y-6 transition-all duration-300">
+        <form action={action} className="bg-white/90 dark:bg-[#131b2e]/90 backdrop-blur-2xl rounded-[2rem] p-8 shadow-xl dark:shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-slate-100 dark:border-white/5 space-y-6 transition-all duration-300">
+          
+          {state?.error && (
+            <div className="p-4 rounded-2xl bg-red-50 dark:bg-[#410002] border border-red-100 dark:border-red-500/20 text-red-600 dark:text-[#ffb4ab] text-sm font-semibold flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+              <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+              <p>{state.error}</p>
+            </div>
+          )}
+
           <div className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#b9c8de] mb-2 px-1 transition-colors duration-300">Email Address</label>
@@ -62,9 +57,17 @@ export default function LoginPage() {
 
           <button 
             type="submit" 
-            className="w-full py-4 text-sm font-bold text-white dark:text-[#003731] bg-gradient-to-r from-teal-500 to-teal-600 dark:from-teal-400 dark:to-teal-500 rounded-2xl hover:opacity-90 hover:-translate-y-0.5 transition-all shadow-[0_10px_20px_rgba(45,212,191,0.2)] mt-8 uppercase tracking-widest"
+            disabled={isPending}
+            className="w-full flex items-center justify-center gap-2 py-4 text-sm font-bold text-white dark:text-[#003731] bg-gradient-to-r from-teal-500 to-teal-600 dark:from-teal-400 dark:to-teal-500 rounded-2xl hover:opacity-90 disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5 transition-all shadow-[0_10px_20px_rgba(45,212,191,0.2)] mt-8 uppercase tracking-widest relative"
           >
-            Access Portal
+            {isPending ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Authenticating...
+              </>
+            ) : (
+              "Access Portal"
+            )}
           </button>
           
           <div className="text-center pt-6">
