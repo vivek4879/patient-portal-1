@@ -1,10 +1,10 @@
-# 🏥 Patient Portal & Mini-EMR
+# Patient Portal & Mini-EMR
 
 A full-stack healthcare application built with **Next.js 16**, **TypeScript**, **Prisma**, and **PostgreSQL**. The application consists of two major sections: an **Admin EMR Dashboard** for providers to manage patients, appointments, and prescriptions, and a **Patient Portal** for patients to securely view their health data.
 
 ---
 
-## ✨ Features
+## Features
 
 ### Admin EMR Dashboard (`/admin`)
 - **Patient Directory** — Searchable table with real-time filtering by name or email
@@ -32,7 +32,7 @@ A full-stack healthcare application built with **Next.js 16**, **TypeScript**, *
 
 ---
 
-## 🗂 Project Structure
+## Project Structure
 
 ```
 patient-portal-1/
@@ -75,7 +75,7 @@ patient-portal-1/
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 | Layer       | Technology                                           |
 |-------------|------------------------------------------------------|
@@ -91,7 +91,7 @@ patient-portal-1/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - **Node.js** ≥ 18
@@ -142,7 +142,7 @@ Open [http://localhost:3000/admin](http://localhost:3000/admin) for the **Admin 
 
 ---
 
-## 📊 Database Schema
+## Database Schema
 
 The application uses five relational tables:
 
@@ -156,7 +156,7 @@ Cascading deletes are configured so that removing a patient automatically cleans
 
 ---
 
-## 🧪 Validation Rules
+## Validation Rules
 
 - **Medication & Dosage** — Must be selected from database-seeded dropdowns (no freeform entry)
 - **Prescription Quantity** — Must be ≥ 1 (Zod `.min(1)` + HTML `min="1"`)
@@ -166,13 +166,101 @@ Cascading deletes are configured so that removing a patient automatically cleans
 
 ---
 
-## 📦 Deployment
+## Seeding Data
 
-This application can be deployed to any platform that supports Next.js:
+The application includes a comprehensive seed script that populates your database with sample data.
+
+### Data Sources
+
+- **Medications & Dosages** — Seeded from the Zealthy exercise data at: https://gist.github.com/sbraford/73f63d75bb995b6597754c1707e40cc2
+- **Sample Patients** — Pre-configured with appointments and prescriptions
+- **Default Credentials** — Use these to test the Patient Portal login
+
+### Running the Seed Script
+
+The seed script is configured in `prisma/seed.ts` and runs automatically after installing dependencies. To manually seed the database:
+
+```bash
+npx prisma db seed
+```
+
+This will:
+1. Create lookup tables for medications and dosages
+2. Create sample patient users with hashed passwords
+3. Populate sample appointments and prescriptions
+4. Initialize the database for immediate testing
+
+To reset and re-seed (destructive):
+
+```bash
+npx prisma db push --force-reset
+npx prisma db seed
+```
+
+---
+
+## Deployment to Vercel
+
+Vercel is the recommended platform for deploying Next.js applications. Follow these steps:
+
+### 1. Push Your Code to GitHub
+
+```bash
+git add .
+git commit -m "Ready for deployment"
+git push origin main
+```
+
+### 2. Connect Your Repository to Vercel
+
+1. Go to [vercel.com](https://vercel.com)
+2. Click **Add New** → **Project**
+3. Import your GitHub repository
+4. Vercel will auto-detect it as a Next.js project
+
+### 3. Set Up Environment Variables
+
+In the Vercel dashboard, go to **Settings** → **Environment Variables** and add:
+
+```
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE
+```
+
+For PostgreSQL hosting, consider:
+- **Vercel Postgres** (integrated with Vercel)
+- **Supabase** (free tier available)
+- **Railway** (PostgreSQL hosting)
+- **Neon** (serverless PostgreSQL)
+
+### 4. Deploy
+
+Click **Deploy** and Vercel will:
+- Install dependencies
+- Run the build (`npm run build`)
+- Deploy to a live URL
+
+Vercel will automatically seed your database on first deployment if configured.
+
+### 5. Post-Deployment
+
+Your application will be live at a URL like: `https://your-project-name.vercel.app`
+
+- **Patient Portal** — `https://your-project-name.vercel.app`
+- **Admin Dashboard** — `https://your-project-name.vercel.app/admin`
+
+### Environment-Specific Builds
+
+For different database configurations per environment (staging, production), add environment variables in the Vercel dashboard for each deployment environment.
+
+---
+
+## Local Build & Production Test
+
+To test the production build locally before deploying:
 
 ```bash
 npm run build
 npm start
 ```
 
-Compatible with **Vercel**, **Netlify**, **Fly.io**, **AWS**, **Azure**, and more.
+This will start the Next.js server in production mode at `http://localhost:3000`.
